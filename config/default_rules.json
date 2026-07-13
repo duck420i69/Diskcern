@@ -1,0 +1,39 @@
+{
+  "rules": [
+    {
+      "name": "Node Modules",
+      "pattern": "node_modules",
+      "type": "directory",
+      "risk": "",
+      "action_cmd": ""
+    },
+    {
+      "name": "Git Repository",
+      "pattern": ".git",
+      "type": "directory",
+      "risk": "",
+      "action_cmd": ""
+    },
+    {
+      "name": "Temporary Files",
+      "pattern": "Temp",
+      "type": "directory",
+      "risk": "",
+      "action_cmd": ""
+    },
+    {
+      "name": "Custom User Rule",
+      "pattern": "E:\\repos\\Web\\Reactive-Resume\\node_modules",
+      "type": "directory",
+      "risk": "Warning",
+      "action_cmd": "Remove-Item -Recurse -Force 'E:\\repos\\Web\\Reactive-Resume\\node_modules'"
+    },
+    {
+      "name": "Custom User Rule",
+      "pattern": "E:\\Games\\Riot Games",
+      "type": "directory",
+      "risk": "Warning",
+      "action_cmd": "Remove-Item -Recurse -Force 'E:\\Games\\Riot Games'"
+    }
+  ]
+}
