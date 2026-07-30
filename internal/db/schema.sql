@@ -11,7 +11,21 @@ CREATE TABLE IF NOT EXISTS file_records (
     size INTEGER NOT NULL,
     is_dir BOOLEAN NOT NULL CHECK (is_dir IN (0, 1)),
     matched_rule TEXT,
+    description TEXT,
     FOREIGN KEY(snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE
 );
 
 CREATE INDEX IF NOT EXISTS idx_file_records_snapshot_path ON file_records(snapshot_id, path);
+
+CREATE TABLE IF NOT EXISTS tags (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL
+);
+
+CREATE TABLE IF NOT EXISTS file_record_tags (
+    file_record_id INTEGER NOT NULL,
+    tag_id INTEGER NOT NULL,
+    PRIMARY KEY(file_record_id, tag_id),
+    FOREIGN KEY(file_record_id) REFERENCES file_records(id) ON DELETE CASCADE,
+    FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
+);

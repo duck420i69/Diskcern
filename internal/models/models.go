@@ -9,15 +9,16 @@ type Snapshot struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// FileRecord represents a file or a grouped directory (from early stopping).
 type FileRecord struct {
-	ID          int64  `json:"id"`
-	SnapshotID  int64  `json:"snapshot_id"`
-	Path        string `json:"path"`
-	Size        int64  `json:"size"`
-	IsDir       bool   `json:"is_dir"`
-	MatchedRule string `json:"matched_rule"`
-	ProviderID  string `json:"provider_id"`
+	ID          int64    `json:"id"`
+	SnapshotID  int64    `json:"snapshot_id"`
+	Path        string   `json:"path"`
+	Size        int64    `json:"size"`
+	IsDir       bool     `json:"is_dir"`
+	MatchedRule string   `json:"matched_rule"`
+	ProviderID  string   `json:"provider_id"`
+	Tags        []string `json:"tags"`
+	Description string   `json:"description"`
 }
 
 // DiffResult represents the difference between two snapshots.

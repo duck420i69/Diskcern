@@ -36,10 +36,24 @@ func InitDB(dbPath string) (*DB, error) {
 		size INTEGER NOT NULL,
 		is_dir BOOLEAN NOT NULL CHECK (is_dir IN (0, 1)),
 		matched_rule TEXT,
+		description TEXT,
 		FOREIGN KEY(snapshot_id) REFERENCES snapshots(id) ON DELETE CASCADE
 	);
 	
 	CREATE INDEX IF NOT EXISTS idx_file_records_snapshot_path ON file_records(snapshot_id, path);
+
+	CREATE TABLE IF NOT EXISTS tags (
+		id INTEGER PRIMARY KEY AUTOINCREMENT,
+		name TEXT UNIQUE NOT NULL
+	);
+
+	CREATE TABLE IF NOT EXISTS file_record_tags (
+		file_record_id INTEGER NOT NULL,
+		tag_id INTEGER NOT NULL,
+		PRIMARY KEY(file_record_id, tag_id),
+		FOREIGN KEY(file_record_id) REFERENCES file_records(id) ON DELETE CASCADE,
+		FOREIGN KEY(tag_id) REFERENCES tags(id) ON DELETE CASCADE
+	);
 	`
 	_, err = conn.Exec(schema)
 	if err != nil {
@@ -62,17 +76,56 @@ func (d *DB) InsertRecords(snapshotID int64, records []models.FileRecord) error 
 	if err != nil {
 		return err
 	}
-	stmt, err := tx.Prepare("INSERT INTO file_records (snapshot_id, path, size, is_dir, matched_rule) VALUES (?, ?, ?, ?, ?)")
+	defer tx.Rollback()
+
+	stmt, err := tx.Prepare("INSERT INTO file_records (snapshot_id, path, size, is_dir, matched_rule, description) VALUES (?, ?, ?, ?, ?, ?)")
 	if err != nil {
 		return err
 	}
 	defer stmt.Close()
 
+	tagStmt, err := tx.Prepare("INSERT OR IGNORE INTO tags (name) VALUES (?)")
+	if err != nil {
+		return err
+	}
+	defer tagStmt.Close()
+
+	tagIDStmt, err := tx.Prepare("SELECT id FROM tags WHERE name = ?")
+	if err != nil {
+		return err
+	}
+	defer tagIDStmt.Close()
+
+	linkStmt, err := tx.Prepare("INSERT INTO file_record_tags (file_record_id, tag_id) VALUES (?, ?)")
+	if err != nil {
+		return err
+	}
+	defer linkStmt.Close()
+
 	for _, r := range records {
-		_, err = stmt.Exec(snapshotID, r.Path, r.Size, r.IsDir, r.MatchedRule)
+		res, err := stmt.Exec(snapshotID, r.Path, r.Size, r.IsDir, r.MatchedRule, r.Description)
 		if err != nil {
-			tx.Rollback()
 			return err
+		}
+		recordID, err := res.LastInsertId()
+		if err != nil {
+			return err
+		}
+
+		for _, tag := range r.Tags {
+			_, err = tagStmt.Exec(tag)
+			if err != nil {
+				return err
+			}
+			var tagID int64
+			err = tagIDStmt.QueryRow(tag).Scan(&tagID)
+			if err != nil {
+				return err
+			}
+			_, err = linkStmt.Exec(recordID, tagID)
+			if err != nil {
+				return err
+			}
 		}
 	}
 	return tx.Commit()
